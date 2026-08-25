@@ -7,7 +7,25 @@
 *
 * 🟢 You can import this file directly.
 */
+export const OtpType = {
+  EMAIL_VERIFICATION: 'EMAIL_VERIFICATION',
+  PASSWORD_RESET: 'PASSWORD_RESET',
+  LOGIN_VERIFICATION: 'LOGIN_VERIFICATION'
+} as const
+
+export type OtpType = (typeof OtpType)[keyof typeof OtpType]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const AuthenticationAction = {
+  REGISTER: 'REGISTER',
+  LOGIN: 'LOGIN',
+  LOGIN_FAILED: 'LOGIN_FAILED',
+  LOGOUT: 'LOGOUT',
+  REFRESH_TOKEN: 'REFRESH_TOKEN',
+  VERIFY_EMAIL: 'VERIFY_EMAIL',
+  RESEND_OTP: 'RESEND_OTP',
+  FORGOT_PASSWORD: 'FORGOT_PASSWORD',
+  RESET_PASSWORD: 'RESET_PASSWORD'
+} as const
+
+export type AuthenticationAction = (typeof AuthenticationAction)[keyof typeof AuthenticationAction]

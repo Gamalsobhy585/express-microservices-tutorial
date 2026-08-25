@@ -43,5 +43,50 @@ export { Prisma }
  * 
  */
 export type User = Prisma.UserModel
+/**
+ * Model Role
+ * 
+ */
+export type Role = Prisma.RoleModel
+/**
+ * Model Permission
+ * 
+ */
+export type Permission = Prisma.PermissionModel
+/**
+ * Model UserRole
+ * 
+ */
+export type UserRole = Prisma.UserRoleModel
+/**
+ * Model RolePermission
+ * *
+ *  * |--------------------------------------------------------------------------
+ *  * | Role Permissions
+ *  * |--------------------------------------------------------------------------
+ */
+export type RolePermission = Prisma.RolePermissionModel
+/**
+ * Model Otp
+ * 
+ */
+export type Otp = Prisma.OtpModel
+/**
+ * Model RefreshToken
+ * 
+ */
+export type RefreshToken = Prisma.RefreshTokenModel
+/**
+ * Model AuthenticationLog
+ * *
+ *  * |--------------------------------------------------------------------------
+ *  * | Authentication Logs
+ *  * |--------------------------------------------------------------------------
+ */
+export type AuthenticationLog = Prisma.AuthenticationLogModel
 
+export type OtpType = $Enums.OtpType
+export const OtpType = $Enums.OtpType
 
+export type AuthenticationAction = $Enums.AuthenticationAction
+export const AuthenticationAction = $Enums.AuthenticationAction

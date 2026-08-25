@@ -58,8 +58,8 @@ const config: runtime.GetPrismaClientConfig = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider        = \"prisma-client\"\n  output          = \"../src/generated/prisma\"\n  previewFeatures = [\"queryCompiler\", \"driverAdapters\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id Int @id @default(autoincrement())\n\n  name_en String @map(\"name_en\")\n  name_ar String @map(\"name_ar\")\n\n  email    String @unique\n  password String\n\n  roleId Int @map(\"role\")\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n",
-  "inlineSchemaHash": "c3df88d31fecd437e4665037732f811c2e8e31617c574f9677929f4ab688b00e",
+  "inlineSchema": "generator client {\n  provider        = \"prisma-client\"\n  output          = \"../src/generated/prisma\"\n  previewFeatures = [\"queryCompiler\", \"driverAdapters\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id Int @id @default(autoincrement())\n\n  name_en String @map(\"name_en\")\n  name_ar String @map(\"name_ar\")\n\n  email    String @unique\n  password String\n\n  emailVerifiedAt DateTime? @map(\"email_verified_at\")\n\n  isActive Boolean @default(true) @map(\"is_active\")\n\n  createdAt DateTime @default(now()) @map(\"created_at\")\n  updatedAt DateTime @updatedAt @map(\"updated_at\")\n\n  userRoles          UserRole[]\n  otps               Otp[]\n  refreshTokens      RefreshToken[]\n  authenticationLogs AuthenticationLog[]\n\n  @@index([email])\n  @@map(\"users\")\n}\n\nenum OtpType {\n  EMAIL_VERIFICATION\n  PASSWORD_RESET\n  LOGIN_VERIFICATION\n}\n\nenum AuthenticationAction {\n  REGISTER\n  LOGIN\n  LOGIN_FAILED\n  LOGOUT\n  REFRESH_TOKEN\n  VERIFY_EMAIL\n  RESEND_OTP\n  FORGOT_PASSWORD\n  RESET_PASSWORD\n}\n\nmodel Role {\n  id Int @id @default(autoincrement())\n\n  name        String  @unique\n  displayName String? @map(\"display_name\")\n\n  createdAt DateTime @default(now()) @map(\"created_at\")\n  updatedAt DateTime @updatedAt @map(\"updated_at\")\n\n  userRoles       UserRole[]\n  rolePermissions RolePermission[]\n\n  @@map(\"roles\")\n}\n\nmodel Permission {\n  id Int @id @default(autoincrement())\n\n  name        String  @unique\n  displayName String? @map(\"display_name\")\n\n  createdAt DateTime @default(now()) @map(\"created_at\")\n  updatedAt DateTime @updatedAt @map(\"updated_at\")\n\n  rolePermissions RolePermission[]\n\n  @@map(\"permissions\")\n}\n\nmodel UserRole {\n  userId Int @map(\"user_id\")\n  roleId Int @map(\"role_id\")\n\n  createdAt DateTime @default(now()) @map(\"created_at\")\n  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)\n\n  @@id([userId, roleId])\n  @@index([roleId])\n  @@map(\"user_roles\")\n}\n\n/**\n * |--------------------------------------------------------------------------\n * | Role Permissions\n * |--------------------------------------------------------------------------\n */\nmodel RolePermission {\n  roleId       Int @map(\"role_id\")\n  permissionId Int @map(\"permission_id\")\n\n  createdAt DateTime @default(now()) @map(\"created_at\")\n\n  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)\n  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)\n\n  @@id([roleId, permissionId])\n  @@index([permissionId])\n  @@map(\"role_permissions\")\n}\n\n/**\n * |--------------------------------------------------------------------------\n * | OTPs\n * |--------------------------------------------------------------------------\n */\n\nmodel Otp {\n  id Int @id @default(autoincrement())\n\n  userId Int @map(\"user_id\")\n\n  /**\n   * Never store the raw OTP in production.\n   * We will hash the OTP before saving it.\n   */\n  codeHash String @map(\"code_hash\")\n\n  type OtpType\n\n  expiresAt DateTime @map(\"expires_at\")\n\n  usedAt DateTime? @map(\"used_at\")\n\n  createdAt DateTime @default(now()) @map(\"created_at\")\n\n  user User @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@index([userId, type])\n  @@index([expiresAt])\n  @@map(\"otps\")\n}\n\n/**\n * |--------------------------------------------------------------------------\n * | Refresh Tokens\n * |--------------------------------------------------------------------------\n */\n\nmodel RefreshToken {\n  id Int @id @default(autoincrement())\n\n  userId Int @map(\"user_id\")\n\n  /**\n   * Store token hash instead of raw refresh token.\n   */\n  tokenHash String @unique @map(\"token_hash\")\n\n  expiresAt DateTime @map(\"expires_at\")\n\n  revokedAt DateTime? @map(\"revoked_at\")\n\n  createdAt DateTime @default(now()) @map(\"created_at\")\n\n  user User @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@index([userId])\n  @@index([expiresAt])\n  @@map(\"refresh_tokens\")\n}\n\n/**\n * |--------------------------------------------------------------------------\n * | Authentication Logs\n * |--------------------------------------------------------------------------\n */\nmodel AuthenticationLog {\n  id Int @id @default(autoincrement())\n\n  userId Int? @map(\"user_id\")\n\n  action AuthenticationAction\n\n  success Boolean @default(true)\n\n  ipAddress String? @map(\"ip_address\")\n\n  userAgent String? @map(\"user_agent\")\n\n  message String?\n\n  createdAt DateTime @default(now()) @map(\"created_at\")\n\n  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)\n\n  @@index([userId])\n  @@index([action])\n  @@index([createdAt])\n  @@map(\"authentication_logs\")\n}\n",
+  "inlineSchemaHash": "295b25b7740398a68c37c9eeb0f12ae15040477408c9e889e1751c8b33809ed5",
   "copyEngine": true,
   "runtimeDataModel": {
     "models": {},
@@ -69,7 +69,7 @@ const config: runtime.GetPrismaClientConfig = {
   "dirname": ""
 }
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name_en\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"name_en\"},{\"name\":\"name_ar\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"name_ar\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"password\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"roleId\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"role\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name_en\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"name_en\"},{\"name\":\"name_ar\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"name_ar\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"password\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"emailVerifiedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"email_verified_at\"},{\"name\":\"isActive\",\"kind\":\"scalar\",\"type\":\"Boolean\",\"dbName\":\"is_active\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"created_at\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"updated_at\"},{\"name\":\"userRoles\",\"kind\":\"object\",\"type\":\"UserRole\",\"relationName\":\"UserToUserRole\"},{\"name\":\"otps\",\"kind\":\"object\",\"type\":\"Otp\",\"relationName\":\"OtpToUser\"},{\"name\":\"refreshTokens\",\"kind\":\"object\",\"type\":\"RefreshToken\",\"relationName\":\"RefreshTokenToUser\"},{\"name\":\"authenticationLogs\",\"kind\":\"object\",\"type\":\"AuthenticationLog\",\"relationName\":\"AuthenticationLogToUser\"}],\"dbName\":\"users\"},\"Role\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"displayName\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"display_name\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"created_at\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"updated_at\"},{\"name\":\"userRoles\",\"kind\":\"object\",\"type\":\"UserRole\",\"relationName\":\"RoleToUserRole\"},{\"name\":\"rolePermissions\",\"kind\":\"object\",\"type\":\"RolePermission\",\"relationName\":\"RoleToRolePermission\"}],\"dbName\":\"roles\"},\"Permission\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"displayName\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"display_name\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"created_at\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"updated_at\"},{\"name\":\"rolePermissions\",\"kind\":\"object\",\"type\":\"RolePermission\",\"relationName\":\"PermissionToRolePermission\"}],\"dbName\":\"permissions\"},\"UserRole\":{\"fields\":[{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"user_id\"},{\"name\":\"roleId\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"role_id\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"created_at\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"UserToUserRole\"},{\"name\":\"role\",\"kind\":\"object\",\"type\":\"Role\",\"relationName\":\"RoleToUserRole\"}],\"dbName\":\"user_roles\"},\"RolePermission\":{\"fields\":[{\"name\":\"roleId\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"role_id\"},{\"name\":\"permissionId\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"permission_id\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"created_at\"},{\"name\":\"role\",\"kind\":\"object\",\"type\":\"Role\",\"relationName\":\"RoleToRolePermission\"},{\"name\":\"permission\",\"kind\":\"object\",\"type\":\"Permission\",\"relationName\":\"PermissionToRolePermission\"}],\"dbName\":\"role_permissions\"},\"Otp\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"user_id\"},{\"name\":\"codeHash\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"code_hash\"},{\"name\":\"type\",\"kind\":\"enum\",\"type\":\"OtpType\"},{\"name\":\"expiresAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"expires_at\"},{\"name\":\"usedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"used_at\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"created_at\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"OtpToUser\"}],\"dbName\":\"otps\"},\"RefreshToken\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"user_id\"},{\"name\":\"tokenHash\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"token_hash\"},{\"name\":\"expiresAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"expires_at\"},{\"name\":\"revokedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"revoked_at\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"created_at\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"RefreshTokenToUser\"}],\"dbName\":\"refresh_tokens\"},\"AuthenticationLog\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"user_id\"},{\"name\":\"action\",\"kind\":\"enum\",\"type\":\"AuthenticationAction\"},{\"name\":\"success\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"ipAddress\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"ip_address\"},{\"name\":\"userAgent\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"user_agent\"},{\"name\":\"message\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"created_at\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"AuthenticationLogToUser\"}],\"dbName\":\"authentication_logs\"}},\"enums\":{},\"types\":{}}")
 config.engineWasm = undefined
 config.compilerWasm = {
   getRuntime: async () => await import("@prisma/client/runtime/query_compiler_bg.postgresql.mjs"),
@@ -238,6 +238,76 @@ export interface PrismaClient<
     * ```
     */
   get user(): Prisma.UserDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.role`: Exposes CRUD operations for the **Role** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Roles
+    * const roles = await prisma.role.findMany()
+    * ```
+    */
+  get role(): Prisma.RoleDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.permission`: Exposes CRUD operations for the **Permission** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Permissions
+    * const permissions = await prisma.permission.findMany()
+    * ```
+    */
+  get permission(): Prisma.PermissionDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.userRole`: Exposes CRUD operations for the **UserRole** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more UserRoles
+    * const userRoles = await prisma.userRole.findMany()
+    * ```
+    */
+  get userRole(): Prisma.UserRoleDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.rolePermission`: Exposes CRUD operations for the **RolePermission** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more RolePermissions
+    * const rolePermissions = await prisma.rolePermission.findMany()
+    * ```
+    */
+  get rolePermission(): Prisma.RolePermissionDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.otp`: Exposes CRUD operations for the **Otp** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Otps
+    * const otps = await prisma.otp.findMany()
+    * ```
+    */
+  get otp(): Prisma.OtpDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.refreshToken`: Exposes CRUD operations for the **RefreshToken** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more RefreshTokens
+    * const refreshTokens = await prisma.refreshToken.findMany()
+    * ```
+    */
+  get refreshToken(): Prisma.RefreshTokenDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.authenticationLog`: Exposes CRUD operations for the **AuthenticationLog** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more AuthenticationLogs
+    * const authenticationLogs = await prisma.authenticationLog.findMany()
+    * ```
+    */
+  get authenticationLog(): Prisma.AuthenticationLogDelegate<ExtArgs, ClientOptions>;
 }
 
 export function getPrismaClientClass(dirname: string): PrismaClientConstructor {

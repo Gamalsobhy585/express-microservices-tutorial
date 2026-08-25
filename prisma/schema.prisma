@@ -18,8 +18,189 @@ model User {
   email    String @unique
   password String
 
-  roleId Int @map("role")
+  emailVerifiedAt DateTime? @map("email_verified_at")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userRoles          UserRole[]
+  otps               Otp[]
+  refreshTokens      RefreshToken[]
+  authenticationLogs AuthenticationLog[]
+
+  @@index([email])
+  @@map("users")
+}
+
+enum OtpType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  LOGIN_VERIFICATION
+}
+
+enum AuthenticationAction {
+  REGISTER
+  LOGIN
+  LOGIN_FAILED
+  LOGOUT
+  REFRESH_TOKEN
+  VERIFY_EMAIL
+  RESEND_OTP
+  FORGOT_PASSWORD
+  RESET_PASSWORD
+}
+
+model Role {
+  id Int @id @default(autoincrement())
+
+  name        String  @unique
+  displayName String? @map("display_name")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id Int @id @default(autoincrement())
+
+  name        String  @unique
+  displayName String? @map("display_name")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model UserRole {
+  userId Int @map("user_id")
+  roleId Int @map("role_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+/**
+ * |--------------------------------------------------------------------------
+ * | Role Permissions
+ * |--------------------------------------------------------------------------
+ */
+model RolePermission {
+  roleId       Int @map("role_id")
+  permissionId Int @map("permission_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+/**
+ * |--------------------------------------------------------------------------
+ * | OTPs
+ * |--------------------------------------------------------------------------
+ */
+
+model Otp {
+  id Int @id @default(autoincrement())
+
+  userId Int @map("user_id")
+
+  /**
+   * Never store the raw OTP in production.
+   * We will hash the OTP before saving it.
+   */
+  codeHash String @map("code_hash")
+
+  type OtpType
+
+  expiresAt DateTime @map("expires_at")
+
+  usedAt DateTime? @map("used_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([expiresAt])
+  @@map("otps")
+}
+
+/**
+ * |--------------------------------------------------------------------------
+ * | Refresh Tokens
+ * |--------------------------------------------------------------------------
+ */
+
+model RefreshToken {
+  id Int @id @default(autoincrement())
+
+  userId Int @map("user_id")
+
+  /**
+   * Store token hash instead of raw refresh token.
+   */
+  tokenHash String @unique @map("token_hash")
+
+  expiresAt DateTime @map("expires_at")
+
+  revokedAt DateTime? @map("revoked_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+/**
+ * |--------------------------------------------------------------------------
+ * | Authentication Logs
+ * |--------------------------------------------------------------------------
+ */
+model AuthenticationLog {
+  id Int @id @default(autoincrement())
+
+  userId Int? @map("user_id")
+
+  action AuthenticationAction
+
+  success Boolean @default(true)
+
+  ipAddress String? @map("ip_address")
+
+  userAgent String? @map("user_agent")
+
+  message String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("authentication_logs")
 }

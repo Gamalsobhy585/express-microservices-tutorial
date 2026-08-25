@@ -26,10 +26,18 @@ export const createUserRequest = z.object({
             .min(8, 'Password must be at least 8 characters')
             .max(100, 'Password cannot exceed 100 characters'),
 
-        roleId: z.nativeEnum(RoleEnum),
-    }),
-});
 
-export type CreateUserRequest = z.infer<
-    typeof createUserRequest
->['body'];
+            role:
+                z.nativeEnum(
+                    RoleEnum,
+                ),
+
+        }),
+
+    });
+
+
+export type CreateUserRequest =
+    z.infer<
+        typeof createUserRequest
+    >['body'];
