@@ -1,19 +1,24 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["queryCompiler", "driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  name_en  String
-  name_ar  String
+  id Int @id @default(autoincrement())
+
+  name_en String @map("name_en")
+  name_ar String @map("name_ar")
+
   email    String @unique
   password String
-  role     Int
+
+  roleId Int @map("role")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

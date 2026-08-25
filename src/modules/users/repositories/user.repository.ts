@@ -49,9 +49,9 @@ export class UserRepository implements IUserRepository {
 
         return prisma.user.create({
             data: {
-                nameEn: data.nameEn,
+                name_en: data.name_en,
 
-                nameAr: data.nameAr,
+                name_ar: data.name_ar,
 
                 email: data.email,
 

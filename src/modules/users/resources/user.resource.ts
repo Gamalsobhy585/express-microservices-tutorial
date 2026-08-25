@@ -11,9 +11,9 @@ export class UserResource {
         return {
             id: user.id,
 
-            nameEn: user.name_en,
+            name_en: user.name_en,
 
-            nameAr: user.name_ar,
+            name_ar: user.name_ar,
 
             email: user.email,
 

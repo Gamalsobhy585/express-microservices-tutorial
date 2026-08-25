@@ -1,9 +1,9 @@
 import { RoleEnum } from '../enums/role.enum.js';
 
 export interface CreateUserDto {
-    nameEn: string;
+    name_en: string;
 
-    nameAr: string;
+    name_ar: string;
 
     email: string;
 

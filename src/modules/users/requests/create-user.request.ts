@@ -3,13 +3,13 @@ import { RoleEnum } from "../enums/role.enum.js";
 
 export const createUserRequest = z.object({
     body: z.object({
-        nameEn: z
+        name_en: z
             .string()
             .trim()
             .min(2, 'English name must be at least 2 characters')
             .max(255, 'English name cannot exceed 255 characters'),
 
-        nameAr: z
+        name_ar: z
             .string()
             .trim()
             .min(2, 'Arabic name must be at least 2 characters')

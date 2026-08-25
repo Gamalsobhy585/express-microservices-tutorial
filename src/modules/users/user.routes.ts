@@ -116,16 +116,16 @@ router.get(
  *           schema:
  *             type: object
  *             required:
- *               - nameEn
- *               - nameAr
+ *               - name_en
+ *               - name_ar
  *               - email
  *               - password
  *               - roleId
  *             properties:
- *               nameEn:
+ *               name_en:
  *                 type: string
  *                 example: Ahmed Ali
- *               nameAr:
+ *               name_ar:
  *                 type: string
  *                 example: أحمد علي
  *               email:
@@ -179,9 +179,9 @@ router.post(
  *           schema:
  *             type: object
  *             properties:
- *               nameEn:
+ *               name_en:
  *                 type: string
- *               nameAr:
+ *               name_ar:
  *                 type: string
  *               email:
  *                 type: string

@@ -92,11 +92,11 @@ export class UserController {
         try {
 
             const dto: CreateUserDto = {
-                nameEn:
-                    req.body.nameEn,
+                name_en:
+                    req.body.name_en,
 
-                nameAr:
-                    req.body.nameAr,
+                name_ar:
+                    req.body.name_ar,
 
                 email:
                     req.body.email,
@@ -144,11 +144,11 @@ export class UserController {
                 Number(req.params.id);
 
             const dto: UpdateUserDto = {
-                nameEn:
-                    req.body.nameEn,
+                name_en:
+                    req.body.name_en,
 
-                nameAr:
-                    req.body.nameAr,
+                name_ar:
+                    req.body.name_ar,
 
                 email:
                     req.body.email,

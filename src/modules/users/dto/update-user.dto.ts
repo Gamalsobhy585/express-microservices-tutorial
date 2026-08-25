@@ -1,9 +1,9 @@
-import type { RoleEnum } from '../enums/role.enum.ts';
+import type { RoleEnum } from '../enums/role.enum.js';
 
 export interface UpdateUserDto {
-    nameEn?: string;
+    name_en?: string;
 
-    nameAr?: string;
+    name_ar?: string;
 
     email?: string;
 

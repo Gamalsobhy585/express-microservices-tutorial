@@ -7,14 +7,14 @@ export const updateUserRequest = z.object({
     }),
 
     body: z.object({
-        nameEn: z
+        name_en: z
             .string()
             .trim()
             .min(2)
             .max(255)
             .optional(),
 
-        nameAr: z
+        name_ar: z
             .string()
             .trim()
             .min(2)
