@@ -19,6 +19,8 @@ import type {
     IAuthRepository,
 } from './auth.repository.interface.js';
 
+import type { Otp } from '../../../generated/prisma/client.js';
+
 export class AuthRepository implements IAuthRepository {
 
     async findUserByEmail(
@@ -206,4 +208,159 @@ async registerUser(
             },
         });
     }
+    async findLatestValidOtp(
+        userId: number,
+        type: OtpType,
+    ): Promise<Otp | null> {
+
+        return prisma.otp.findFirst({
+
+            where: {
+
+                userId,
+
+                type,
+
+                usedAt: null,
+
+                expiresAt: {
+                    gt:
+                        new Date(),
+                },
+
+            },
+
+            orderBy: {
+                createdAt:
+                    'desc',
+            },
+
+        });
+    }
+
+
+    async findLatestOtp(
+        userId: number,
+        type: OtpType,
+    ): Promise<Otp | null> {
+
+        return prisma.otp.findFirst({
+
+            where: {
+                userId,
+                type,
+            },
+
+            orderBy: {
+                createdAt:
+                    'desc',
+            },
+
+        });
+    }
+
+    async invalidateOtps(
+        userId: number,
+        type: OtpType,
+    ): Promise<void> {
+
+        await prisma.otp.updateMany({
+
+            where: {
+
+                userId,
+
+                type,
+
+                usedAt: null,
+
+            },
+
+            data: {
+
+                usedAt:
+                    new Date(),
+
+            },
+
+        });
+    }
+    async verifyEmail(
+        userId: number,
+        otpId: number,
+    ): Promise<User> {
+
+        return prisma.$transaction(
+            async (
+                transaction,
+            ) => {
+
+                const user =
+                    await transaction.user.update({
+
+                        where: {
+                            id:
+                                userId,
+                        },
+
+                        data: {
+
+                            emailVerifiedAt:
+                                new Date(),
+
+                        },
+
+                    });
+
+
+                await transaction.otp.update({
+
+                    where: {
+                        id:
+                            otpId,
+                    },
+
+                    data: {
+
+                        usedAt:
+                            new Date(),
+
+                    },
+
+                });
+
+
+                /*
+                * Invalidate any other outstanding
+                * email verification OTP.
+                */
+                await transaction.otp.updateMany({
+
+                    where: {
+
+                        userId,
+
+                        type:
+                            OtpType
+                                .EMAIL_VERIFICATION,
+
+                        usedAt: null,
+
+                    },
+
+                    data: {
+
+                        usedAt:
+                            new Date(),
+
+                    },
+
+                });
+
+
+                return user;
+            },
+        );
+    }
+
 }

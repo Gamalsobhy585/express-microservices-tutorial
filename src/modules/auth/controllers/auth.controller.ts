@@ -3,7 +3,8 @@ import type {
     Request,
     Response,
 } from 'express';
-
+import type { VerifyEmailDto } from '../dto/verify-email.dto.js';
+import type { ResendOtpDto } from '../dto/resend-otp.dto.js';
 import type {
     RegisterDto,
 } from '../dto/register.dto.js';
@@ -91,4 +92,120 @@ export class AuthController {
             );
         }
     };
+    verifyEmail = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ) => {
+
+        try {
+
+            const dto: VerifyEmailDto = {
+
+                email:
+                    req.body.email,
+
+                otp:
+                    req.body.otp,
+
+            };
+
+
+            const user =
+                await this.authService
+                    .verifyEmail(
+                        dto,
+                        {
+                            ipAddress:
+                                req.ip ?? null,
+
+                            userAgent:
+                                req.get(
+                                    'user-agent',
+                                    ) ?? null,
+                        },
+                    );
+
+
+            return res
+                .status(200)
+                .json({
+
+                    success:
+                        true,
+
+                    message:
+                        'Email verified successfully',
+
+                    data:
+                        AuthResource
+                            .registeredUser(
+                                user,
+                            ),
+
+                });
+
+        } catch (error) {
+
+            next(
+                error,
+            );
+        }
+    };
+
+    resendOtp = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ) => {
+
+        try {
+
+            const dto: ResendOtpDto = {
+
+                email:
+                    req.body.email,
+
+            };
+
+
+            const result =
+                await this.authService
+                    .resendVerificationOtp(
+                        dto,
+                        {
+                            ipAddress:
+                                req.ip ?? null,
+
+                            userAgent:
+                                req.get(
+                                    'user-agent',
+                                    ) ?? null,
+                        },
+                    );
+
+
+            return res
+                .status(200)
+                .json({
+
+                    success:
+                        true,
+
+                    message:
+                        'OTP sent successfully',
+
+                    data:
+                        result,
+
+                });
+
+        } catch (error) {
+
+            next(
+                error,
+            );
+        }
+    };
+
 }

@@ -3,6 +3,7 @@ import type {
     OtpType,
     Role,
     User,
+    Otp
 } from '../../../generated/prisma/client.js';
 
 export interface RegisterUserTransactionData {
@@ -93,4 +94,29 @@ export interface IAuthRepository {
     createAuthenticationLog(
         data: CreateAuthenticationLogData,
     ): Promise<void>;
+
+
+    findLatestValidOtp(
+        userId: number,
+        type: OtpType,
+    ): Promise<Otp | null>;
+
+
+    findLatestOtp(
+        userId: number,
+        type: OtpType,
+    ): Promise<Otp | null>;
+
+
+    verifyEmail(
+        userId: number,
+        otpId: number,
+    ): Promise<User>;
+
+
+    invalidateOtps(
+        userId: number,
+        type: OtpType,
+    ): Promise<void>;
+
 }
