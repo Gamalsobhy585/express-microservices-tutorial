@@ -2,11 +2,13 @@ import type {
     AuthenticationAction,
     Role,
     User,
+    RefreshToken,
+    
 } from '../../../generated/prisma/client.js';
 import  {
    OtpType
 } from '../../../generated/prisma/client.js';
-
+ import type  { CreateRefreshTokenData,UserWithRoles } from './auth.repository.interface.js';
 
 import {
     prisma,
@@ -237,8 +239,53 @@ async registerUser(
 
         });
     }
+    async findUserWithRoles(
+        userId: number,
+    ): Promise<UserWithRoles | null> {
 
+        return prisma.user.findUnique({
 
+            where: {
+                id:
+                    userId,
+            },
+
+            include: {
+
+                userRoles: {
+
+                    include: {
+                        role:
+                            true,
+                    },
+
+                },
+
+            },
+
+        });
+    }
+    async createRefreshToken(
+        data: CreateRefreshTokenData,
+    ): Promise<RefreshToken> {
+
+        return prisma.refreshToken.create({
+
+            data: {
+
+                userId:
+                    data.userId,
+
+                tokenHash:
+                    data.tokenHash,
+
+                expiresAt:
+                    data.expiresAt,
+
+            },
+
+        });
+    }
     async findLatestOtp(
         userId: number,
         type: OtpType,

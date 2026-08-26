@@ -1,6 +1,8 @@
 import type {
     AuthenticationAction,
     OtpType,
+    Prisma,
+    RefreshToken,
     Role,
     User,
     Otp
@@ -54,6 +56,24 @@ export interface CreateAuthenticationLogData {
     message?: string | null;
 }
 
+export type UserWithRoles =
+    Prisma.UserGetPayload<{
+        include: {
+            userRoles: {
+                include: {
+                    role: true;
+                };
+            };
+        };
+    }>;
+export interface CreateRefreshTokenData {
+    userId: number;
+
+    tokenHash: string;
+
+    expiresAt: Date;
+}
+
 export interface IAuthRepository {
 
     findUserByEmail(
@@ -64,7 +84,14 @@ export interface IAuthRepository {
     findRoleByName(
         name: string,
     ): Promise<Role | null>;
+    findUserWithRoles(
+        userId: number,
+    ): Promise<UserWithRoles | null>;
 
+
+    createRefreshToken(
+        data: CreateRefreshTokenData,
+    ): Promise<RefreshToken>;
 
     createUser(
         data: CreateUserData,

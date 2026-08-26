@@ -15,7 +15,7 @@ import {
 import {
     errorMiddleware,
 } from './shared/middleware/error.middleware.js';
-
+import cookieParser from 'cookie-parser';
 
 const app = express();
 
@@ -141,6 +141,8 @@ app.use(
 app.use(
     errorMiddleware,
 );
-
+app.use(
+    cookieParser(),
+);
 
 export default app;

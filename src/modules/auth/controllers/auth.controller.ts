@@ -16,6 +16,7 @@ import   {
 import {
     AuthResource,
 } from '../resources/auth.resource.js';
+import type { LoginDto } from '../dto/login.dto.js';
 
 export class AuthController {
 
@@ -207,5 +208,154 @@ export class AuthController {
             );
         }
     };
+    login = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ) => {
 
+        try {
+
+            const dto: LoginDto = {
+
+                email:
+                    req.body.email,
+
+                password:
+                    req.body.password,
+
+            };
+
+
+            const result =
+                await this.authService.login(
+                    dto,
+                    {
+                      ipAddress:
+                                req.ip ?? null,
+
+                        userAgent:
+                                req.get(
+                                    'user-agent',
+                                    ) ?? null,
+                    },
+                );
+
+
+            /*
+            * Refresh token is NOT sent
+            * inside the JSON body.
+            */
+            res.cookie(
+                'refresh_token',
+                result.refreshToken,
+                {
+                    httpOnly:
+                        true,
+
+                    secure:
+                        process.env.NODE_ENV
+                        === 'production',
+
+                    sameSite:
+                        'strict',
+
+                    maxAge:
+                        Number(
+                            process.env
+                                .JWT_REFRESH_COOKIE_MAX_AGE_MS
+                            ?? 604800000,
+                        ),
+
+                    path:
+                        '/api/v1/auth',
+                },
+            );
+
+
+            return res
+                .status(200)
+                .json({
+
+                    success:
+                        true,
+
+                    message:
+                        'Login successful',
+
+                    data: {
+
+                        user:
+                            AuthResource
+                                .authenticatedUser(
+                                    result.user,
+                                ),
+
+                        accessToken:
+                            result.accessToken,
+
+                        tokenType:
+                            'Bearer',
+
+                    },
+
+                });
+
+        } catch (error) {
+
+            next(
+                error,
+            );
+        }
+    };
+    me = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ) => {
+
+        try {
+
+            if (
+                !req.user
+            ) {
+
+                throw new Error(
+                    'Authenticated user is missing',
+                );
+            }
+
+
+            const user =
+                await this.authService
+                    .getMe(
+                        req.user.id,
+                    );
+
+
+            return res
+                .status(200)
+                .json({
+
+                    success:
+                        true,
+
+                    message:
+                        'User information retrieved successfully',
+
+                    data:
+                        AuthResource
+                            .authenticatedUser(
+                                user,
+                            ),
+
+                });
+
+        } catch (error) {
+
+            next(
+                error,
+            );
+        }
+    };
 }

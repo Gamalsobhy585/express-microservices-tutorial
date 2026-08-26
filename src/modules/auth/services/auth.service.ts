@@ -17,6 +17,7 @@ import type{
 
 import type {
     IAuthRepository,
+    UserWithRoles,
 } from '../repositories/auth.repository.interface.js';
 
 import  {
@@ -34,6 +35,9 @@ import  {
 import  {
     AppError,
 } from '../../../shared/errors/AppError.js';
+import  { JwtService } from '../../../shared/services/jwt.service.js';
+import type { LoginDto } from '../dto/login.dto.js';
+import { CacheService } from '../../../shared/services/cache.service.js';
 
 export interface RegisterContext {
 
@@ -292,151 +296,424 @@ export class AuthService {
 
         return verifiedUser;
     }
-async resendVerificationOtp(
-    dto: ResendOtpDto,
-    context: RegisterContext,
-) {
-
-    const user =
-        await this.authRepository
-            .findUserByEmail(
-                dto.email,
-            );
-
-
-    if (!user) {
-
-        throw new AppError(
-            'User not found',
-            404,
-        );
-    }
-
-
-    if (
-        user.emailVerifiedAt
+    async resendVerificationOtp(
+        dto: ResendOtpDto,
+        context: RegisterContext,
     ) {
 
-        throw new AppError(
-            'Email is already verified',
-            400,
-        );
-    }
-
-
-    const lastOtp =
-        await this.authRepository
-            .findLatestOtp(
-
-                user.id,
-
-                OtpType
-                    .EMAIL_VERIFICATION,
-
-            );
-
-
-    if (
-        lastOtp
-        &&
-        !OtpService.canResend(
-            lastOtp.createdAt,
-        )
-    ) {
-
-        const remainingSeconds =
-            OtpService
-                .getRemainingCooldownSeconds(
-                    lastOtp.createdAt,
+        const user =
+            await this.authRepository
+                .findUserByEmail(
+                    dto.email,
                 );
 
 
-        throw new AppError(
-            `Please wait ${remainingSeconds} seconds before requesting another OTP`,
-            429,
-        );
-    }
+        if (!user) {
+
+            throw new AppError(
+                'User not found',
+                404,
+            );
+        }
 
 
-    /*
-     * Invalidate previous OTPs.
-     */
-    await this.authRepository
-        .invalidateOtps(
+        if (
+            user.emailVerifiedAt
+        ) {
 
-            user.id,
-
-            OtpType
-                .EMAIL_VERIFICATION,
-
-        );
+            throw new AppError(
+                'Email is already verified',
+                400,
+            );
+        }
 
 
-    const otp =
-        OtpService.generate();
+        const lastOtp =
+            await this.authRepository
+                .findLatestOtp(
+
+                    user.id,
+
+                    OtpType
+                        .EMAIL_VERIFICATION,
+
+                );
 
 
-    const otpHash =
-        await OtpService.hash(
-            otp,
-        );
+        if (
+            lastOtp
+            &&
+            !OtpService.canResend(
+                lastOtp.createdAt,
+            )
+        ) {
+
+            const remainingSeconds =
+                OtpService
+                    .getRemainingCooldownSeconds(
+                        lastOtp.createdAt,
+                    );
 
 
-    await this.authRepository
-        .createOtp({
+            throw new AppError(
+                `Please wait ${remainingSeconds} seconds before requesting another OTP`,
+                429,
+            );
+        }
 
-            userId:
+
+        /*
+        * Invalidate previous OTPs.
+        */
+        await this.authRepository
+            .invalidateOtps(
+
                 user.id,
 
-            codeHash:
-                otpHash,
-
-            type:
                 OtpType
                     .EMAIL_VERIFICATION,
 
-            expiresAt:
-                OtpService
-                    .getExpirationDate(),
-
-        });
+            );
 
 
-    await this.authRepository
-        .createAuthenticationLog({
-
-            userId:
-                user.id,
-
-            action:
-                AuthenticationAction
-                    .RESEND_OTP,
-
-            success:
-                true,
-
-            ipAddress:
-                context.ipAddress ?? null,
-
-            userAgent:
-                context.userAgent ?? null,
-
-            message:
-                'Email verification OTP resent',
-
-        });
+        const otp =
+            OtpService.generate();
 
 
-    await MailService
-        .sendVerificationOtp(
-            user.email,
-            otp,
+        const otpHash =
+            await OtpService.hash(
+                otp,
+            );
+
+
+        await this.authRepository
+            .createOtp({
+
+                userId:
+                    user.id,
+
+                codeHash:
+                    otpHash,
+
+                type:
+                    OtpType
+                        .EMAIL_VERIFICATION,
+
+                expiresAt:
+                    OtpService
+                        .getExpirationDate(),
+
+            });
+
+
+        await this.authRepository
+            .createAuthenticationLog({
+
+                userId:
+                    user.id,
+
+                action:
+                    AuthenticationAction
+                        .RESEND_OTP,
+
+                success:
+                    true,
+
+                ipAddress:
+                    context.ipAddress ?? null,
+
+                userAgent:
+                    context.userAgent ?? null,
+
+                message:
+                    'Email verification OTP resent',
+
+            });
+
+
+        await MailService
+            .sendVerificationOtp(
+                user.email,
+                otp,
+            );
+
+
+        return {
+            email:
+                user.email,
+        };
+    }
+    async login(
+        dto: LoginDto,
+        context: RegisterContext,
+    ) {
+
+        const user =
+            await this.authRepository
+                .findUserByEmail(
+                    dto.email,
+                );
+
+
+        /*
+        * Keep response generic so attackers
+        * cannot easily enumerate emails.
+        */
+        if (!user) {
+
+            await this.authRepository
+                .createAuthenticationLog({
+
+                    userId:
+                        null,
+
+                    action:
+                        AuthenticationAction
+                            .LOGIN_FAILED,
+
+                    success:
+                        false,
+
+                    ipAddress:
+                        context.ipAddress ?? null,
+
+                    userAgent:
+                        context.userAgent ?? null,
+
+                    message:
+                        'Invalid credentials',
+
+                });
+
+
+            throw new AppError(
+                'Invalid email or password',
+                401,
+            );
+        }
+
+
+        const passwordIsValid =
+            await PasswordUtil.compare(
+                dto.password,
+                user.password,
+            );
+
+
+        if (!passwordIsValid) {
+
+            await this.authRepository
+                .createAuthenticationLog({
+
+                    userId:
+                        user.id,
+
+                    action:
+                        AuthenticationAction
+                            .LOGIN_FAILED,
+
+                    success:
+                        false,
+
+                    ipAddress:
+                        context.ipAddress?? null,
+
+                    userAgent:
+                        context.userAgent?? null,
+
+                    message:
+                        'Invalid password',
+
+                });
+
+
+            throw new AppError(
+                'Invalid email or password',
+                401,
+            );
+        }
+
+
+        if (
+            !user.emailVerifiedAt
+        ) {
+
+            throw new AppError(
+                'Please verify your email before login',
+                403,
+            );
+        }
+
+
+        if (
+            !user.isActive
+        ) {
+
+            throw new AppError(
+                'Your account is inactive',
+                403,
+            );
+        }
+
+
+        const accessToken =
+            JwtService.generateAccessToken({
+
+                userId:
+                    user.id,
+
+                email:
+                    user.email,
+
+            });
+
+
+        const refreshToken =
+            JwtService.generateRefreshToken({
+
+                userId:
+                    user.id,
+
+                type:
+                    'refresh',
+
+            });
+
+
+        const refreshTokenHash =
+            JwtService.hashToken(
+                refreshToken,
+            );
+
+
+        const refreshTokenExpiresAt =
+            JwtService
+                .getRefreshTokenExpiration(
+                    refreshToken,
+                );
+
+
+        await this.authRepository
+            .createRefreshToken({
+
+                userId:
+                    user.id,
+
+                tokenHash:
+                    refreshTokenHash,
+
+                expiresAt:
+                    refreshTokenExpiresAt,
+
+            });
+
+
+        await this.authRepository
+            .createAuthenticationLog({
+
+                userId:
+                    user.id,
+
+                action:
+                    AuthenticationAction
+                        .LOGIN,
+
+                success:
+                    true,
+
+                ipAddress:
+                    context.ipAddress?? null,
+
+                userAgent:
+                    context.userAgent?? null,
+
+                message:
+                    'Login successful',
+
+            });
+
+
+        const userWithRoles =
+            await this.authRepository
+                .findUserWithRoles(
+                    user.id,
+                );
+
+
+        if (!userWithRoles) {
+
+            throw new AppError(
+                'User not found',
+                404,
+            );
+        }
+
+
+        return {
+
+            user:
+                userWithRoles,
+
+            accessToken,
+
+            refreshToken,
+
+        };
+    }
+    async getMe(
+        userId: number,
+    ): Promise<UserWithRoles> {
+
+        const cacheKey =
+            CacheService
+                .userProfileKey(
+                    userId,
+                );
+
+
+        /*
+        * 1. Try Memcached
+        */
+        const cachedUser =
+            await CacheService.get<UserWithRoles>(
+                cacheKey,
+            );
+
+
+        if (cachedUser) {
+
+            return cachedUser;
+        }
+
+
+        /*
+        * 2. Cache miss → PostgreSQL
+        */
+        const user =
+            await this.authRepository
+                .findUserWithRoles(
+                    userId,
+                );
+
+
+        if (!user) {
+
+            throw new AppError(
+                'User not found',
+                404,
+            );
+        }
+
+
+        /*
+        * 3. Store in Memcached
+        */
+        await CacheService.set(
+            cacheKey,
+            user,
         );
 
 
-    return {
-        email:
-            user.email,
-    };
-}
+        return user;
+    }
 }
