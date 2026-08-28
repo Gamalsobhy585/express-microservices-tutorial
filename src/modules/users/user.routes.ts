@@ -26,6 +26,8 @@ import {
     updateUserRequest,
 } from './requests/update-user.request.js';
 import { userIdRequest } from './requests/user-id.request.js';
+import { authenticate } from '../../shared/middleware/authenticate.middleware.js';
+import { authorize } from '../../shared/middleware/authorize.middleware.js';
 
 
 const router = Router();
@@ -49,6 +51,14 @@ const userController =
     new UserController(
         userService,
     );
+
+    router.use(authenticate, authorize('admin'));
+
+router.get('/', userController.index);
+router.get('/:id', validate(userIdRequest), userController.show);
+router.post('/', validate(createUserRequest), userController.store);
+router.put('/:id', validate(updateUserRequest), userController.update);
+router.delete('/:id', validate(userIdRequest), userController.destroy);
 
 
 /*
@@ -101,7 +111,6 @@ router.get(
 
     userController.show,
 );
-
 /**
  * @openapi
  * /users:
@@ -109,6 +118,8 @@ router.get(
  *     tags:
  *       - Users
  *     summary: Create user
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -124,27 +135,41 @@ router.get(
  *             properties:
  *               name_en:
  *                 type: string
- *                 example: Ahmed Ali
+ *                 example: Sarah Ahmed
  *               name_ar:
  *                 type: string
- *                 example: أحمد علي
+ *                 example: سارة أحمد
  *               email:
  *                 type: string
  *                 format: email
- *                 example: ahmed@example.com
+ *                 example: sarah.doctor@example.com
  *               password:
  *                 type: string
  *                 example: Password123!
  *               roleId:
  *                 type: integer
- *                 enum:
- *                   - 1
- *                   - 2
- *                   - 3
+ *                 description: "ID of an existing role (see roles table — e.g. admin, doctor, patient)"
  *                 example: 2
  *     responses:
  *       201:
  *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               example:
+ *                 success: true
+ *                 message: User created successfully
+ *                 data:
+ *                   id: 4
+ *                   name_en: Sarah Ahmed
+ *                   name_ar: سارة أحمد
+ *                   email: sarah.doctor@example.com
+ *                   isActive: true
+ *       401:
+ *         description: Missing or invalid access token
+ *       403:
+ *         description: Authenticated user does not have the admin role
  *       422:
  *         description: Validation error
  *       409:

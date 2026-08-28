@@ -18,10 +18,10 @@ export class AuthResource {
             id:
                 user.id,
 
-            nameEn:
+            name_en:
                 user.name_en,
 
-            nameAr:
+            name_ar:
                 user.name_ar,
 
             email:
@@ -49,10 +49,10 @@ export class AuthResource {
             id:
                 user.id,
 
-            nameEn:
+            name_en:
                 user.name_en,
 
-            nameAr:
+            name_ar:
                 user.name_ar,
 
             email:

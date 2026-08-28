@@ -52,6 +52,14 @@ const options: swaggerJsdoc.Options = {
 
         },
 
+        security: [
+
+            {
+                bearerAuth: [],
+            },
+
+        ],
+
     },
 
     apis: [

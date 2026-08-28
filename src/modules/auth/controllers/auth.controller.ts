@@ -37,10 +37,10 @@ export class AuthController {
             const dto: RegisterDto = {
 
                 name_en:
-                    req.body.nameEn,
+                    req.body.name_en,
 
                 name_ar:
-                    req.body.nameAr,
+                    req.body.name_Ar,
 
                 email:
                     req.body.email,

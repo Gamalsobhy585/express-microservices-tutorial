@@ -67,6 +67,7 @@ const router =
      *     tags:
      *       - Authentication
      *     summary: Register new user
+     *     security: [] 
      *     requestBody:
      *       required: true
      *       content:
@@ -74,13 +75,13 @@ const router =
      *           schema:
      *             type: object
      *             required:
-     *               - nameEn
-     *               - nameAr
+     *               - name_en
+     *               - name_ar
      *               - email
      *               - password
      *               - role
      *             properties:
-     *               nameEn:
+     *               name_en:
      *                 type: string
      *                 example: Ahmed Ali
      *               nameAr:
@@ -125,6 +126,7 @@ const router =
      *     tags:
      *       - Authentication
      *     summary: Verify user email
+     *     security: [] 
      *     requestBody:
      *       required: true
      *       content:
@@ -164,6 +166,7 @@ const router =
      *   post:
      *     tags:
      *       - Authentication
+     *     security: []
      *     summary: Resend email verification OTP
      *     requestBody:
      *       required: true
@@ -202,6 +205,7 @@ const router =
      *     tags:
      *       - Authentication
      *     summary: Login
+     *     security: []     
      *     requestBody:
      *       required: true
      *       content:

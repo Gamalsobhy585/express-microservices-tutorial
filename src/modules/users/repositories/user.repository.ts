@@ -57,7 +57,6 @@ export class UserRepository implements IUserRepository {
 
                 password: data.password,
 
-                roleId: data.roleId,
             },
         });
     }

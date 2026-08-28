@@ -38,6 +38,7 @@ import  {
 import  { JwtService } from '../../../shared/services/jwt.service.js';
 import type { LoginDto } from '../dto/login.dto.js';
 import { CacheService } from '../../../shared/services/cache.service.js';
+import { OtpEmailProducer } from './otp-email.producer.js';
 
 export interface RegisterContext {
 
@@ -178,11 +179,10 @@ export class AuthService {
             });
 
 
-        await MailService
-            .sendVerificationOtp(
-                user.email,
+            await OtpEmailProducer.publish({
+                email: user.email,
                 otp,
-            );
+            });
 
 
         return user;
@@ -431,12 +431,10 @@ export class AuthService {
             });
 
 
-        await MailService
-            .sendVerificationOtp(
-                user.email,
+            await OtpEmailProducer.publish({
+                email: user.email,
                 otp,
-            );
-
+            });
 
         return {
             email:

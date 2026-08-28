@@ -11,6 +11,7 @@ import { UserResource } from '../resources/user.resource.js';
 import type { CreateUserDto } from '../dto/create-user.dto.js';
 
 import type { UpdateUserDto } from '../dto/update-user.dto.js';
+import { RoleEnum } from '../enums/role.enum.js';
 
 export class UserController {
 
@@ -92,20 +93,14 @@ export class UserController {
         try {
 
             const dto: CreateUserDto = {
-                name_en:
-                    req.body.name_en,
+                name_en: req.body.name_en,
 
-                name_ar:
-                    req.body.name_ar,
+                name_ar: req.body.name_ar,
 
-                email:
-                    req.body.email,
+                email: req.body.email,
 
-                password:
-                    req.body.password,
-
-                roleId:
-                    req.body.roleId,
+                password: req.body.password,
+                role: RoleEnum.ADMIN
             };
 
             const user =
@@ -153,8 +148,7 @@ export class UserController {
                 email:
                     req.body.email,
 
-                roleId:
-                    req.body.roleId,
+              
             };
 
             const user =

@@ -3,11 +3,11 @@ import {
     PrismaClient,
 } from '../src/generated/prisma/client.js';
 
-
 import {
     PrismaPg,
 } from '@prisma/adapter-pg';
 
+import bcrypt from 'bcrypt';
 
 const connectionString =
     process.env.DATABASE_URL;
@@ -28,8 +28,13 @@ const adapter =
 
 const prisma =
     new PrismaClient({
-        adapter,
+        
     });
+
+
+const SALT_ROUNDS = 10;
+
+const DEFAULT_PASSWORD = '123456';
 
 
 const roles = [
@@ -102,6 +107,32 @@ const permissions = [
     {
         name: 'permissions.assign',
         displayName: 'Assign Permissions',
+    },
+
+];
+
+
+const users = [
+
+    {
+        name_en: 'Admin',
+        name_ar: 'مدير',
+        email: 'admin@example.com',
+        roleName: 'admin',
+    },
+
+    {
+        name_en: 'Doctor',
+        name_ar: 'طبيب',
+        email: 'doctor@example.com',
+        roleName: 'doctor',
+    },
+
+    {
+        name_en: 'Patient',
+        name_ar: 'مريض',
+        email: 'patient@example.com',
+        roleName: 'patient',
     },
 
 ];
@@ -233,6 +264,116 @@ async function main() {
             },
 
         });
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Users
+    |--------------------------------------------------------------------------
+    */
+
+    const hashedPassword =
+        await bcrypt.hash(
+            DEFAULT_PASSWORD,
+            SALT_ROUNDS,
+        );
+
+
+    for (
+        const userData of users
+    ) {
+
+        const role =
+            await prisma.role.findUnique({
+
+                where: {
+                    name:
+                        userData.roleName,
+                },
+
+            });
+
+
+        if (!role) {
+
+            throw new Error(
+                `Role "${userData.roleName}" not found`,
+            );
+
+        }
+
+
+        const user =
+            await prisma.user.upsert({
+
+                where: {
+                    email:
+                        userData.email,
+                },
+
+                update: {},
+
+                create: {
+
+                    name_en:
+                        userData.name_en,
+
+                    name_ar:
+                        userData.name_ar,
+
+                    email:
+                        userData.email,
+
+                    password:
+                        hashedPassword,
+
+                    emailVerifiedAt:
+                        new Date(),
+
+                    isActive:
+                        true,
+
+                },
+
+            });
+
+
+        await prisma.userRole.upsert({
+
+            where: {
+
+                userId_roleId: {
+
+                    userId:
+                        user.id,
+
+                    roleId:
+                        role.id,
+
+                },
+
+            },
+
+            update: {},
+
+            create: {
+
+                userId:
+                    user.id,
+
+                roleId:
+                    role.id,
+
+            },
+
+        });
+
+
+        console.log(
+            `Seeded user: ${userData.email} (${userData.roleName})`,
+        );
 
     }
 

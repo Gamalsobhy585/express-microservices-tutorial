@@ -7,5 +7,5 @@ export interface UpdateUserDto {
 
     email?: string;
 
-    roleId?: RoleEnum;
+    role?: RoleEnum;
 }

@@ -3,9 +3,9 @@ import type { CreateUserDto } from '../dto/create-user.dto.js';
 import type { UpdateUserDto } from '../dto/update-user.dto.js';
 export interface CreateUserRepositoryData {
 
-    nameEn: string;
+    name_en: string;
 
-    nameAr: string;
+    name_ar: string;
 
     email: string;
 
